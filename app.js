@@ -17,6 +17,13 @@ app.use((req, res, next) => {
   next();
 });
 app.use(router);
+app.use((req, res, next) => {
+  res.status(404);
+  if (req.accepts('json')) {
+    res.json({ message: 'Not found' });
+    next();
+  }
+});
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

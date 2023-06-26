@@ -15,6 +15,8 @@ module.exports.deleteCard = (req, res) => {
     .catch((err) => {
       if (err.message === 'NOT_FOUND') {
         handlerCardNotFoundError(res, cardId);
+      } else if (err.name === 'CastError') {
+        handlerBadRequestError(res);
       } else {
         handlerServerError(res, err);
       }
@@ -48,7 +50,7 @@ module.exports.putLike = (req, res) => {
     .catch((err) => {
       if (err.message === 'NOT_FOUND') {
         handlerCardNotFoundError(res, cardId);
-      } else if (err.name === 'ValidationError') {
+      } else if (err.name === 'CastError') {
         handlerBadRequestError(res);
       } else {
         handlerServerError(res, err);
@@ -69,7 +71,7 @@ module.exports.deleteLike = (req, res) => {
     .catch((err) => {
       if (err.message === 'NOT_FOUND') {
         handlerCardNotFoundError(res, cardId);
-      } else if (err.name === 'ValidationError') {
+      } else if (err.name === 'CastError') {
         handlerBadRequestError(res);
       } else {
         handlerServerError(res, err);

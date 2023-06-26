@@ -15,6 +15,8 @@ module.exports.getUserById = (req, res) => {
     .catch((err) => {
       if (err.message === 'NOT_FOUND') {
         handlerUserNotFoundError(res, userId);
+      } else if (err.name === 'CastError') {
+        handlerBadRequestError(res);
       } else {
         handlerServerError(res, err);
       }
