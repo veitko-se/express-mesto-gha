@@ -1,5 +1,13 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { handlerBadRequestError, handlerUserNotFoundError, handlerServerError } = require('../utils/errors');
+const {
+  handlerBadRequestError,
+  handlerUserNotFoundError,
+  handlerServerError,
+  handlerNotAuthorized,
+} = require('../utils/errors');
+const { NODE_ENV, JWT_SECRET } = require('../utils/settings');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -16,7 +24,7 @@ module.exports.getUserById = (req, res) => {
       if (err.message === 'NOT_FOUND') {
         handlerUserNotFoundError(res, userId);
       } else if (err.name === 'CastError') {
-        handlerBadRequestError(res);
+        handlerBadRequestError(res, err);
       } else {
         handlerServerError(res, err);
       }
@@ -24,12 +32,25 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        handlerBadRequestError(res);
+        handlerBadRequestError(res, err);
       } else {
         handlerServerError(res, err);
       }
@@ -45,7 +66,7 @@ module.exports.updateUser = (req, res) => {
       if (err.message === 'NOT_FOUND') {
         handlerUserNotFoundError(res, userId);
       } else if (err.name === 'ValidationError') {
-        handlerBadRequestError(res);
+        handlerBadRequestError(res, err);
       } else {
         handlerServerError(res, err);
       }
@@ -61,7 +82,39 @@ module.exports.updateAvatar = (req, res) => {
       if (err.message === 'NOT_FOUND') {
         handlerUserNotFoundError(res, userId);
       } else if (err.name === 'ValidationError') {
-        handlerBadRequestError(res);
+        handlerBadRequestError(res, err);
+      } else {
+        handlerServerError(res, err);
+      }
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        { expiresIn: '7d' },
+      );
+      res.send({ token });
+    })
+    .catch(() => {
+      handlerNotAuthorized(res);
+    });
+};
+
+module.exports.getUserMe = (req, res) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .orFail(() => new Error('NOT_FOUND'))
+    .then((user) => res.send(user))
+    .catch((err) => {
+      if (err.message === 'NOT_FOUND') {
+        handlerUserNotFoundError(res, userId);
+      } else if (err.name === 'CastError') {
+        handlerBadRequestError(res, err);
       } else {
         handlerServerError(res, err);
       }
