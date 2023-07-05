@@ -40,10 +40,10 @@ app.use((err, req, res, next) => {
     const { statusCode = 400, message } = err;
     res.status(statusCode).send({ message: `Переданы некорректные данные: ${message}` });
   } else {
-    next();
+    next(err);
   }
 });
-app.use((err, req, res) => {
+app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res.status(statusCode).send({
     message: statusCode === 500
