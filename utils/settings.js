@@ -1,4 +1,4 @@
-// отказаться от process.env
+// отказаться от .env
 // const { NODE_ENV, JWT_SECRET } = process.env;
 
 // временно хранить ключ в коде

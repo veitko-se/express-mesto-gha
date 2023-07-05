@@ -1,37 +1,26 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const {
-  handlerBadRequestError,
-  handlerUserNotFoundError,
-  handlerServerError,
-  handlerNotAuthorized,
-} = require('../utils/errors');
+const NotFoundError = require('../errors/not-found-err');
+const UnauthorizedError = require('../errors/unauthorized-err');
+const ConflictError = require('../errors/conflict-err');
 const { NODE_ENV, JWT_SECRET } = require('../utils/settings');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send(users))
-    .catch((err) => handlerServerError(res, err));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
-    .orFail(() => new Error('NOT_FOUND'))
+    .orFail(() => new NotFoundError(`Пользователь по указанному _id='${userId}' не найден`))
     .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.message === 'NOT_FOUND') {
-        handlerUserNotFoundError(res, userId);
-      } else if (err.name === 'CastError') {
-        handlerBadRequestError(res, err);
-      } else {
-        handlerServerError(res, err);
-      }
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     name,
     about,
@@ -49,49 +38,33 @@ module.exports.createUser = (req, res) => {
     }))
     .then((user) => res.status(201).send(user))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        handlerBadRequestError(res, err);
-      } else {
-        handlerServerError(res, err);
+      if (err.code === 11000) {
+        throw new ConflictError(`Пользователь с указанным email='${email}' уже существует`);
       }
+      next(err);
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const userId = req.user._id;
   User.findOneAndUpdate({ _id: userId }, req.body, { new: true, runValidators: true })
-    .orFail(() => new Error('NOT_FOUND'))
+    .orFail(() => new NotFoundError(`Пользователь по указанному _id='${userId}' не найден`))
     .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.message === 'NOT_FOUND') {
-        handlerUserNotFoundError(res, userId);
-      } else if (err.name === 'ValidationError') {
-        handlerBadRequestError(res, err);
-      } else {
-        handlerServerError(res, err);
-      }
-    });
+    .catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const userId = req.user._id;
   User.findOneAndUpdate({ _id: userId }, req.body, { new: true, runValidators: true })
-    .orFail(() => new Error('NOT_FOUND'))
+    .orFail(() => new NotFoundError(`Пользователь по указанному _id='${userId}' не найден`))
     .then((avatar) => res.send(avatar))
-    .catch((err) => {
-      if (err.message === 'NOT_FOUND') {
-        handlerUserNotFoundError(res, userId);
-      } else if (err.name === 'ValidationError') {
-        handlerBadRequestError(res, err);
-      } else {
-        handlerServerError(res, err);
-      }
-    });
+    .catch(next);
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
+    .orFail(() => new UnauthorizedError('Отказано в доступе'))
     .then((user) => {
       const token = jwt.sign(
         { _id: user._id },
@@ -100,23 +73,13 @@ module.exports.login = (req, res) => {
       );
       res.send({ token });
     })
-    .catch(() => {
-      handlerNotAuthorized(res);
-    });
+    .catch(next);
 };
 
-module.exports.getUserMe = (req, res) => {
+module.exports.getUserMe = (req, res, next) => {
   const userId = req.user._id;
   User.findById(userId)
-    .orFail(() => new Error('NOT_FOUND'))
+    .orFail(() => new NotFoundError(`Пользователь по указанному _id='${userId}' не найден`))
     .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.message === 'NOT_FOUND') {
-        handlerUserNotFoundError(res, userId);
-      } else if (err.name === 'CastError') {
-        handlerBadRequestError(res, err);
-      } else {
-        handlerServerError(res, err);
-      }
-    });
+    .catch(next);
 };

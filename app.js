@@ -35,6 +35,22 @@ app.use((req, res, next) => {
   res.status(404).send({ message: 'Not found' });
   next();
 });
+app.use((err, req, res, next) => {
+  if (err.name === 'CastError' || err.name === 'ValidationError') {
+    const { statusCode = 400, message } = err;
+    res.status(statusCode).send({ message: `Переданы некорректные данные: ${message}` });
+  } else {
+    next();
+  }
+});
+app.use((err, req, res) => {
+  const { statusCode = 500, message } = err;
+  res.status(statusCode).send({
+    message: statusCode === 500
+      ? `Внутренняя ошибка сервера: ${message}`
+      : message,
+  });
+});
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Слушаю порт ${PORT}`);
