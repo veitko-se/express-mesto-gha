@@ -21,12 +21,20 @@ router.patch('/me', celebrate({
     password: Joi.string().min(8),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().uri(),
+    avatar: Joi.string().uri({
+      scheme: [
+        /https?/,
+      ],
+    }),
   }),
 }), updateUser);
 router.patch('/me/avatar', celebrate({
   params: Joi.object().keys({
-    avatar: Joi.string().uri(),
+    avatar: Joi.string().uri({
+      scheme: [
+        /https?/,
+      ],
+    }),
   }),
 }), updateAvatar);
 
