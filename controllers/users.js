@@ -21,27 +21,19 @@ module.exports.getUserById = (req, res, next) => {
 };
 
 module.exports.createUser = (req, res, next) => {
-  const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
-  } = req.body;
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({
-      name,
-      about,
-      avatar,
-      email,
-      password: hash,
-    }))
-    .then((user) => res.status(201).send(user))
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => User.create({ ...req.body, password: hash }))
+    .then((user) => {
+      const responseUser = user.toObject();
+      delete responseUser.password;
+      res.status(201).send(responseUser);
+    })
     .catch((err) => {
       if (err.code === 11000) {
-        throw new ConflictError(`Пользователь с указанным email='${email}' уже существует`);
+        next(new ConflictError(`Пользователь с указанным email='${req.body.email}' уже существует`));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
