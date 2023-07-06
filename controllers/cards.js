@@ -1,13 +1,13 @@
 const Card = require('../models/card');
 const NotFoundError = require('../errors/not-found-err');
-const UnauthorizedError = require('../errors/unauthorized-err');
+const ForbiddenError = require('../errors/forbidden-err');
 
 const getCardById = (cardId) => Card.findById(cardId)
   .orFail(() => new NotFoundError(`Карточка с _id='${cardId}' не найдена`));
 
 const checkCardOwner = (userId, card) => {
   if (userId !== card.owner._id.toString()) {
-    return Promise.reject(new UnauthorizedError('Отказано в доступе'));
+    return Promise.reject(new ForbiddenError('Отказано в доступе'));
   }
   return card;
 };
