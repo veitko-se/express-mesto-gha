@@ -15,10 +15,18 @@ router.get('/:userId', celebrate({
     userId: Joi.string().required().pattern(/[0-9a-z]{24}/),
   }),
 }), getUserById);
-router.patch('/me', updateUser);
+router.patch('/me', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required().min(8),
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).max(30),
+    avatar: Joi.string().pattern(/^https?:\/\/[a-zA-Z0-9а-яА-Я\-._~:/?#[@!$&'()*+,;=]+/),
+  }),
+}), updateUser);
 router.patch('/me/avatar', celebrate({
   params: Joi.object().keys({
-    avatar: Joi.string().required().pattern(/^https?:\/\/[a-zA-Z0-9а-яА-Я\-._~:/?#[@!$&'()*+,;=]+/),
+    avatar: Joi.string().pattern(/^https?:\/\/[a-zA-Z0-9а-яА-Я\-._~:/?#[@!$&'()*+,;=]+/),
   }),
 }), updateAvatar);
 
