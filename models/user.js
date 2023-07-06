@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const UnauthorizedError = require('../errors/unauthorized-err');
+const { VALID_URL_REGEX } = require('../utils/constants');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -20,7 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
-      validator: (v) => /^https?:\/\/[a-zA-Z0-9а-яА-Я\-._~:/?#[@!$&'()*+,;=]+/.test(v),
+      validator: (v) => VALID_URL_REGEX.test(v),
       message: (props) => `${props.value} is not a valid avatar!`,
     },
   },

@@ -15,13 +15,6 @@ const checkCardOwner = (userId, card) => {
 const deleteCard = (cardId) => Card.findByIdAndRemove(cardId)
   .orFail(() => new NotFoundError(`Карточка с _id='${cardId}' не найдена`));
 
-const deleteLike = (userId, cardId) => Card.findOneAndUpdate(
-  { _id: cardId },
-  { $pull: { likes: userId } },
-  { new: true, runValidators: true },
-)
-  .orFail(() => new NotFoundError(`Карточка с _id='${cardId}' не найдена`));
-
 module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
@@ -59,12 +52,15 @@ module.exports.putLike = (req, res, next) => {
     .catch(next);
 };
 
-module.exports.deleteCurrentUserLike = (req, res, next) => {
+module.exports.deleteLike = (req, res, next) => {
   const { cardId } = req.params;
   const userId = req.user._id;
-  getCardById(cardId)
-    .then((card) => checkCardOwner(userId, card))
-    .then((checkedCard) => deleteLike(userId, checkedCard))
+  Card.findOneAndUpdate(
+    { _id: cardId },
+    { $pull: { likes: userId } },
+    { new: true, runValidators: true },
+  )
+    .orFail(() => new NotFoundError(`Карточка с _id='${cardId}' не найдена`))
     .then((updatedCard) => res.send(updatedCard))
     .catch(next);
 };
